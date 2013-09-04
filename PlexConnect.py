@@ -14,7 +14,7 @@ import socket
 from multiprocessing import Process, Pipe
 import signal, errno
 
-import DNSServer, WebServer
+import DNSServer, WebServer, WebServer_SSL
 import Settings
 from Debug import *  # dprint()
 
@@ -97,6 +97,20 @@ def startup():
             pipes['WebServer'] = master
         else:
             dprint('PlexConnect', 0, "WebServer not alive. Shutting down.")
+            running = False
+    
+    # init WebServer_SSL
+    if running:
+        master, slave = Pipe()  # endpoint [0]-PlexConnect, [1]-WebServer
+        proc = Process(target=WebServer_SSL.Run, args=(slave, param))
+        proc.start()
+        
+        time.sleep(0.1)
+        if proc.is_alive():
+            procs['WebServer_SSL'] = proc
+            pipes['WebServer_SSL'] = master
+        else:
+            dprint('PlexConnect', 0, "WebServer_SSL not alive. Shutting down.")
             running = False
     
     # not started successful - clean up
