@@ -7,7 +7,7 @@ if( atv.Document ) {
             return elements[0];
         }
         return undefined;
-    }   
+    }
 }
 
 
@@ -51,12 +51,12 @@ function loadMenuPage(event)
     log("loadItem: "+id);
     var item = document.getElementById(id);
     var url = item.getElementByTagName('url').textContent;
-    
+
     if (url.toLowerCase().indexOf("atv.plexconnect")!=-1)
     {
         url = url + "&PlexConnectUDID=" + atv.device.udid;
     }
-    
+
     var req = new XMLHttpRequest();
     req.onreadystatechange = function()
     {
@@ -92,7 +92,7 @@ atv.showDialog = function(message, description)
                     </dialog> \
                     </body> \
                     </atv>';
- 
+
     atv.loadXML(atv.parseXML(dialogXML));
 };
 
@@ -124,7 +124,7 @@ atv.loadURL = function(url)
         url = url + "&PlexConnectUDID=" + atv.device.udid;
         url = url + "&PlexConnectATVName=" + encodeURIComponent(atv.device.displayName);
     }
-        
+
     iOS_atv_loadURL(url);
 };
 
@@ -143,61 +143,6 @@ atv.loadAndSwapURL = function(url)
         url = url + "&PlexConnectUDID=" + atv.device.udid;
         url = url + "&PlexConnectATVName=" + encodeURIComponent(atv.device.displayName);
     }
-    
+
     iOS_atv_loadAndSwapURL(url);
-};
-
-function myPlex()
-{
-    //private members.
-    var _this = this;
-    var _username;
-    var _password;
-    
-    this.login = function()
-    {
-        _username = "";
-        _password = "";
-        atv.showInputTextPage('emailAddress', 'MyPlex Username', 'Enter in your MyPlex username', function(v) {_username=v;}, null);
-        atv.showInputTextPage('password', 'MyPlex Password', 'Enter in your MyPlex password', function(v) {_password=v; _this.doLogin();}, null);
-    };
-    
-    
-    this.doLogin = function()
-    {
-        log(_username + " " + _password);
-        var url = "http://atv.plexconnect/&PlexConnect=LoginMyPlex:" + _username + "+" + _password + "&PlexConnectUDID=" + atv.device.udid
-        log(url);
-        var req = new XMLHttpRequest();
-        req.open('GET', url, false);
-        req.send();
-        doc=req.responseXML;
-        atv.loadAndSwapXML(doc);
-    };
-    
-    this.logout = function()
-    {
-        log("Ending Session");
-        var url = "http://atv.plexconnect/&PlexConnect=LogoutMyPlex&PlexConnectUDID="+atv.device.udid
-        log(url);
-        var req = new XMLHttpRequest();
-        req.open('GET', url, false);
-        req.send();
-        doc=req.responseXML;
-        atv.loadAndSwapXML(doc);
-    };
-
-    
-    
-};
-
-myPlexLogin = function()
-{
-    new myPlex().login();
-};
-
-
-myPlexLogout = function()
-{
-    new myPlex().logout();
 };

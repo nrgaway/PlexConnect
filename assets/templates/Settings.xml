@@ -36,7 +36,7 @@
 
       <menu>
         <sections>
-          
+
           <menuSection>
             <header>
               <horizontalDivider alignment="left">
@@ -52,26 +52,31 @@
                 <label>{{TEXT(Discover)}}</label>
                 <rightLabel>Plex Media Servers: {{PMSCOUNT()}}</rightLabel>
               </oneLineMenuItem>
-              
-              <oneLineMenuItem id="MyPlexSignInOut" onSelect="myPlexSignInOut()">{{CUT($myplex_auth::=| =CUT)}}
-                <label>{{TEXT(MyPlex Sign In)}}</label>
+
+              <oneLineMenuItem id="MyPlexSignIn" onSelect="myPlexSignInOut('')">
+                <label>{{TEXT(MyPlex: Add User)}}</label>
                 <rightLabel></rightLabel>
                 <accessories>
                   <arrow/>
                 </accessories>
               </oneLineMenuItem>
-              <oneLineMenuItem id="MyPlexSignInOut" onSelect="myPlexSignInOut()">{{CUT($myplex_auth:CUT:=CUT| =)}}
-                <label>{{TEXT(MyPlex Sign Out)}}</label>
+              <oneLineMenuItem id="MyPlexSignOut" onSelect="myPlexSignInOut('signout')">
+                <label>{{TEXT(MyPlex: Remove This User)}}</label>
                 <rightLabel>{{SETTING(myplex_user)}}</rightLabel>
                 <accessories></accessories>
               </oneLineMenuItem>
-              
+              <oneLineMenuItem id="MyPlexChangeUser" onSelect="myPlexChangeUser()">
+                <label>{{TEXT(MyPlex: Switch User)}}</label>
+                <rightLabel>{{SETTING(myplex_current_user)}}</rightLabel>
+                <accessories></accessories>
+              </oneLineMenuItem>
+
               <oneLineMenuItem id="refreshLibrary" onSelect="refreshLibrary('{{ADDR_PMS()}}')">
                 <label>{{TEXT(Refresh Library)}}</label>
               </oneLineMenuItem>
             </items>
           </menuSection>
-          
+
           <menuSection>
             <header>
               <horizontalDivider alignment="left">
@@ -103,7 +108,7 @@
               </oneLineMenuItem>
             </items>
           </menuSection>
-          
+
           <menuSection>
             <header>
               <horizontalDivider alignment="left">
@@ -129,7 +134,7 @@
               </oneLineMenuItem>
             </items>
           </menuSection>
-          
+
         </sections>
       </menu>
     </listWithPreview>

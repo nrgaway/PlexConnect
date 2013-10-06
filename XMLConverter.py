@@ -37,6 +37,7 @@ import httplib, socket
 import urllib2
 import re
 from ast import literal_eval
+import json
 
 
 
@@ -381,6 +382,11 @@ def XML_PMS2aTV(address, path, options):
         g_ATVSettings.setSetting(UDID, 'myplex_user', username)
         g_ATVSettings.setSetting(UDID, 'myplex_auth', auth_token)
 
+        myplex_users = json.loads(g_ATVSettings.getSetting(UDID, 'myplex_users'))
+        myplex_users[username] = {'myplex_user': username, 'myplex_auth': auth_token,}
+        g_ATVSettings.setSetting(UDID, 'myplex_users', json.dumps(myplex_users))
+        g_ATVSettings.setSetting(UDID, 'myplex_current_user', username)
+
         # Reset PlexMgr
         options['PlexMgr'][options['PlexConnectUDID']] = CPlexMgr(options['PlexConnectUDID'], g_ATVSettings)
         PlexMgr = options['PlexMgr'][options['PlexConnectUDID']]
@@ -393,10 +399,16 @@ def XML_PMS2aTV(address, path, options):
 
         UDID = options['PlexConnectUDID']
         auth_token = g_ATVSettings.getSetting(UDID, 'myplex_auth')
+        myplex_user = g_ATVSettings.getSetting(UDID, 'myplex_user')
         PlexAPI_MyPlexSignOut(auth_token)
 
         g_ATVSettings.setSetting(UDID, 'myplex_user', '')
         g_ATVSettings.setSetting(UDID, 'myplex_auth', '')
+
+        myplex_users = json.loads(g_ATVSettings.getSetting(UDID, 'myplex_users'))
+        myplex_users.pop(myplex_user)
+        g_ATVSettings.setSetting(UDID, 'myplex_users', json.dumps(myplex_users))
+        g_ATVSettings.setSetting(UDID, 'myplex_current_user', '')
 
         # Reset PlexMgr
         options['PlexMgr'][options['PlexConnectUDID']] = CPlexMgr(options['PlexConnectUDID'], g_ATVSettings)
@@ -405,6 +417,55 @@ def XML_PMS2aTV(address, path, options):
         XMLtemplate = 'Settings.xml'
         path = ''  # clear path - we don't need PMS-XML
 
+    elif cmd=='MyPlexChangeUser':
+        dprint(__name__, 0, "MyPlex->Change User..")
+        UDID = options['PlexConnectUDID']
+        myplex_users = json.loads(g_ATVSettings.getSetting(UDID, 'myplex_users'))
+        current_user = g_ATVSettings.getSetting(UDID, 'myplex_current_user')
+        username = options.get('MyPlexChangerUserName', None)
+        if username:
+            username =  urllib2.unquote(username)
+        dprint(__name__, 0, "MyPlex->username: '{0}'", username)
+
+        first = None
+        found = None
+        user =  None
+        for key, data in myplex_users.items():
+            if username and username == key:
+                user = key
+                break
+            if not first:
+                first = key # First entry
+            if found:
+                user = key
+                break
+            if key == current_user:
+                found = key
+        if not user:
+            user = first
+
+        g_ATVSettings.setSetting(UDID, 'myplex_user', myplex_users[user]['myplex_user'])
+        g_ATVSettings.setSetting(UDID, 'myplex_auth', myplex_users[user]['myplex_auth'])
+        g_ATVSettings.setSetting(UDID, 'myplex_current_user', user)
+        dprint(__name__, 0, "MyPlex->Changed User to {0}", user)
+
+        # Reset PlexMgr
+        options['PlexMgr'][options['PlexConnectUDID']] = CPlexMgr(options['PlexConnectUDID'], g_ATVSettings)
+        PlexMgr = options['PlexMgr'][options['PlexConnectUDID']]
+
+        # Force Discovery.
+        enableGDM = g_param['CSettings'].getSetting('enable_plexgdm')
+        if enableGDM=='True':
+            rediscover = PlexMgr.discoverPMS(True)
+        else:
+            rediscover = PlexMgr.discoverPMS(True, g_param['CSettings'].getSetting('ip_pms'), g_param['CSettings'].getSetting('port_pms'))
+
+        g_ATVSettings.setOptions('pms_uuid', PlexMgr.getLocalServerNames())
+
+        if PlexMgr.myPlexLoggedIn()==True:
+            PlexMgr.discovermyPlex(True)
+        XMLtemplate = 'Settings.xml'
+        path = ''  # clear path - we don't need PMS-XML
 
     elif cmd.startswith('Discover'):
         #Force Discovery.
@@ -1253,7 +1314,8 @@ class CCommandCollection(CCommandHelper):
         return res
 
     def ATTRIB_ADDR_PMS(self, src, srcXML, param):
-        return g_param['Addr_PMS']
+        #return g_param['Addr_PMS']
+        return g_param.get('Addr_PMS', '')
 
     def ATTRIB_episodestring(self, src, srcXML, param):
         parentIndex, leftover, dfltd = self.getKey(src, srcXML, param)  # getKey "defaults" if nothing found.

@@ -43,6 +43,8 @@ options = { \
     'pms_uuid'          :('*', ), \
     'myplex_user'       :('*', ), \
     'myplex_auth'       :('*', ), \
+    'myplex_users'      :('{}', ), \
+    'myplex_current_user'       :('', ), \
     }
 
 
@@ -112,9 +114,11 @@ class CATVSettings():
             dprint(__name__, 1, "checksetting: default {0} to {1}", option, opts[0])
 
     def toggleSetting(self, UDID, option):
+        dprint(__name__, 0, "toggleSetting UDID:{0}, option:{1}", UDID, option)
         self.checkSection(UDID)
         cur = self.cfg.get(UDID, option)
         opts = options[option]
+        dprint(__name__, 0, "toggleSetting cur:{0}, opts:{1}", cur, opts)
 
         # find current in list
         i=0

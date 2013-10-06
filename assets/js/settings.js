@@ -6,7 +6,7 @@ if( atv.Document ) {
       return elements[0];
     }
     return undefined;
-  }   
+  }
 }
 
 // atv.Element extensions
@@ -27,7 +27,7 @@ if( atv.Element ) {
 /*
  * update Settings
  */
-function toggleSettings(opt, template) 
+function toggleSettings(opt, template)
 {
   // read new XML
   var url = "http://atv.plexconnect/&PlexConnect=SettingsToggle:"+ opt + "+" + template + "&PlexConnectUDID="+atv.device.udid
@@ -35,7 +35,7 @@ function toggleSettings(opt, template)
   req.open('GET', url, false);
   req.send();
   doc=req.responseXML;
-  
+
   // get "opt" element of displayed XML
   var dispval = document.getElementById(opt).getElementByTagName("rightLabel");
   if (!dispval) // No rightlabel must be a checkmark :)
@@ -58,9 +58,9 @@ function toggleSettings(opt, template)
     // get "opt" element of fresh XML
   var newval = doc.getElementById(opt).getElementByTagName("rightLabel");
   if (!newval) return undefined;  // error - element not found
-  
+
   log("new setting - "+opt+"="+newval.textContent);
-    
+
   // push new value to display
   dispval.textContent = newval.textContent;
 };
@@ -68,32 +68,32 @@ function toggleSettings(opt, template)
 /*
  * discover
  */
-function discover(opt, opt_too) 
+function discover(opt, opt_too)
 {
   // get "opt" element of displayed XML
   var dispval = document.getElementById(opt).getElementByTagName("rightLabel");
   if (!dispval) return undefined;  // error - element not found
-    
+
   // read new XML
   var url = "http://atv.plexconnect/&PlexConnect=Discover&PlexConnectUDID="+atv.device.udid
   var req = new XMLHttpRequest();
   req.open('GET', url, false);
   req.send();
   doc=req.responseXML;
-    
+
   // get "opt" element of fresh XML
   var newval = doc.getElementById(opt).getElementByTagName("rightLabel");
   if (!newval) return undefined;  // error - element not found
   log("discover done - "+newval.textContent);
-    
+
   // push new value to display
   dispval.textContent = newval.textContent;
-  
+
   // get "opt_too" element of fresh XML
   newval = doc.getElementById(opt_too).getElementByTagName("rightLabel");
   if (!newval) return undefined;  // error - element not found
   log("update PMS - "+newval.textContent);
-    
+
   // push new value to display
   dispval = document.getElementById(opt_too).getElementByTagName("rightLabel");
   if (!dispval) return undefined;  // error - element not found
@@ -103,7 +103,7 @@ function discover(opt, opt_too)
 /*
  * Refresh library
  */
-function refreshLibrary(addrPMS) 
+function refreshLibrary(addrPMS)
 {
 	atv.loadURL("http://atv.plexconnect/RefreshLibrary.xml");
 	var url = "http://" + addrPMS + "/library/sections/all/refresh";
@@ -113,53 +113,117 @@ function refreshLibrary(addrPMS)
 };
 
 
+/*
+ * Change current MyPlex user
+ */
+
+myPlexChangeUser = function(username)
+{
+    var _myPlexElem = document.getElementById('MyPlexChangeUser')
+    if (!_myPlexElem) return;  // error - element not found
+
+    getLabel = function(elem, label)
+    {
+        return(elem.getElementByTagName(label).textContent)
+    }
+
+    setLabel = function(elem, label, text)
+    {
+        elem.getElementByTagName(label).textContent = text;
+    };
+
+    ChangeUser = function(username)
+    {
+	if (username != null) {
+	    username_url = "&MyPlexChangeUserName=" + encodeURIComponent(username)
+	} else {
+	    username_url = ''
+	}
+	var url = "http://atv.plexconnect/" +
+		  "&PlexConnect=MyPlexChangeUser" +
+		  username_url +
+		  "&PlexConnectUDID=" + atv.device.udid
+	var req = new XMLHttpRequest();
+	req.open('GET', url, false);
+	req.send();
+	var doc = req.responseXML;
+	var new_myPlexElem = doc.getElementById('MyPlexChangeUser')
+
+	// update MyPlexChangeUser
+	setLabel(_myPlexElem, 'label', getLabel(new_myPlexElem, 'label'));
+	setLabel(_myPlexElem, 'rightLabel', getLabel(new_myPlexElem, 'rightLabel'));
+
+	// update MyPlexSignOut
+	new_myPlexElem = doc.getElementById('MyPlexSignOut')
+        _myPlexElem = document.getElementById('MyPlexSignOut')
+	if (!_myPlexElem) return;  // error - element not found
+	setLabel(_myPlexElem, 'rightLabel', getLabel(new_myPlexElem, 'rightLabel'));
+
+	// update PMS
+	new_myPlexElem = doc.getElementById('PMS_uuid')
+        _myPlexElem = document.getElementById('PMS_uuid')
+	setLabel(_myPlexElem, 'rightLabel', getLabel(new_myPlexElem, 'rightLabel'));
+
+	// update discovery
+	new_myPlexElem = doc.getElementById('discover')
+	log("MyPlex Changed User");
+        _myPlexElem = document.getElementById('discover')
+	setLabel(_myPlexElem, 'rightLabel', getLabel(new_myPlexElem, 'rightLabel'));
+    };
+
+    ChangeUser(username)
+};
+
 
 /*
  * MyPlex sign in/out
  */
 
-myPlexSignInOut = function()
+myPlexSignInOut = function(mode)
 {
     var _cancel = '{{TEXT([cancelled])}}'
     var _failed = '{{TEXT([failed])}}'
-    
-    var _myPlexElem = document.getElementById('MyPlexSignInOut')
+
+    var _myPlexElem = document.getElementById('MyPlexSignIn')
     if (!_myPlexElem) return;  // error - element not found
-    
-    
+
+    var _myPlexElemOut = document.getElementById('MyPlexSignOut')
+    //if (!_myPlexElemOut) return;  // error - element not found
+
+
     getLabel = function(elem, label)
     {
         return(elem.getElementByTagName(label).textContent)
     }
-    
+
     setLabel = function(elem, label, text)
     {
         elem.getElementByTagName(label).textContent = text;
     };
-    
+
     showPict = function(elem, pict)
     {
         var elem_add = document.makeElementNamed(pict);
         elem.getElementByTagName("accessories").appendChild(elem_add);
     };
-    
+
     hidePict = function(elem, pict)
     {
         var elem_remove = elem.getElementByTagName("accessories").getElementByTagName(pict);
         if (!elem_remove) return undefined;  // error - element not found
         elem_remove.removeFromParent();
-    }; 
-    
-    
+    };
+
+
     SignIn = function()
     {
         var _username = "";
         var _password = "";
-        
+
         showTextEntryPage = function(input_type, input_title, input_instructions, callback_submit, callback_cancel, defaultvalue)
         {
             var textEntry = new atv.TextEntry();
-            
+
             textEntry.type = input_type;
             textEntry.title = input_title;
             textEntry.instructions = input_instructions;
@@ -168,33 +232,33 @@ myPlexSignInOut = function()
             //textEntry.image =
             textEntry.onSubmit = callback_submit;
             textEntry.onCancel = callback_cancel
-           
+
             textEntry.show();
         };
-        
+
         gotUsername = function(value)
         {
             _username = value;
             showTextEntryPage('password', '{{TEXT(MyPlex Password)}}', '{{TEXT(Enter the MyPlex password for )}}'+_username, gotPassword, gotCancel, null);
         };
-        
+
         gotPassword = function(value)
         {
             _password = value;
             doLogin();
         };
-        
+
         gotCancel = function()
         {
             hidePict(_myPlexElem, 'spinner');
             showPict(_myPlexElem, 'arrow');
             setLabel(_myPlexElem, 'rightLabel', _cancel);
         };
-        
+
         doLogin = function()
         {
             // logout and get new settings page
-            var url = "http://atv.plexconnect/" + 
+            var url = "http://atv.plexconnect/" +
                       "&PlexConnect=MyPlexLogin" +
                       "&PlexConnectCredentials=" + encodeURIComponent(_username+':'+_password) +
                       "&PlexConnectUDID=" + atv.device.udid
@@ -202,36 +266,38 @@ myPlexSignInOut = function()
             req.open('GET', url, false);
             req.send();
             var doc = req.responseXML;
-            var new_myPlexElem = doc.getElementById('MyPlexSignInOut')
-            
+            var new_myPlexElem = doc.getElementById('MyPlexSignOut')
+
             // update MyPlexSignInOut
             hidePict(_myPlexElem, 'spinner');
+            showPict(_myPlexElem, 'arrow');
             var username = getLabel(new_myPlexElem, 'rightLabel')
             if (username)
             {
-                setLabel(_myPlexElem, 'rightLabel', username);
+                setLabel(_myPlexElemOut, 'rightLabel', username);
             }
             else
             {
                 showPict(_myPlexElem, 'arrow')
                 setLabel(_myPlexElem, 'rightLabel', _failed);
             }
-            setLabel(_myPlexElem, 'label', getLabel(new_myPlexElem, 'label'));
-            
+            setLabel(_myPlexElemOut, 'label', getLabel(new_myPlexElem, 'label'));
+	    myPlexChangeUser(username);
+
             log("MyPlex Login - done");
         };
-        
+
         setLabel(_myPlexElem, 'rightLabel', '');
         hidePict(_myPlexElem, 'arrow');
         showPict(_myPlexElem, 'spinner');
         showTextEntryPage('emailAddress', '{{TEXT(MyPlex Username)}}', '{{TEXT(To sign in to MyPlex, enter your Email address, username or Plex forum username.)}}', gotUsername, gotCancel, null);
     };
-    
-    
+
+
     SignOut = function()
     {
         // logout and get new settings page
-        var url = "http://atv.plexconnect/" + 
+        var url = "http://atv.plexconnect/" +
                   "&PlexConnect=MyPlexLogout" +
                   "&PlexConnectUDID=" + atv.device.udid
         var req = new XMLHttpRequest();
@@ -239,18 +305,22 @@ myPlexSignInOut = function()
         req.send();
         var doc = req.responseXML;
         var new_myPlexElem = doc.getElementById('MyPlexSignInOut')
-        
+
         // update MyPlexSignInOut
         showPict(_myPlexElem, 'arrow');
         setLabel(_myPlexElem, 'label', getLabel(new_myPlexElem, 'label'));
         setLabel(_myPlexElem, 'rightLabel', getLabel(new_myPlexElem, 'rightLabel'));
-        
+
+	// Update to the next user
+	myPlexChangeUser();
+
         log("MyPlex Logout - done");
     };
-    
-    
+
+
     var username = getLabel(_myPlexElem, 'rightLabel');
-    
+    username = mode;
+
     if (username == '' ||
         username == _cancel ||
         username == _failed)
