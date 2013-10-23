@@ -1196,7 +1196,7 @@ class CCommandCollection(CCommandHelper):
         token =  PlexMgr = self.options['PlexMgr'][self.options['PlexConnectUDID']].getTokenFromAddress(g_param['Addr_PMS'])
 
         if key.startswith('/'):  # internal full path.
-            if token=="":
+            if not token:
                 res = 'http://127.0.0.1:32400' + key
             else:
                 res = 'http://' + g_param['Addr_PMS'] + key
@@ -1209,7 +1209,7 @@ class CCommandCollection(CCommandHelper):
                 res = res.replace(hijack, hijack_twisted)
                 dprint(__name__, 1, res)
         else:
-            if token=="":
+            if not token:
                 res = 'http://127.0.0.1:32400' + path + '/' + key
             else:
                 res = 'http://' + g_param['Addr_PMS'] + path + '/' + key
@@ -1217,7 +1217,7 @@ class CCommandCollection(CCommandHelper):
         # This is bogus (note the extra path component) but ATV is stupid when it comes to caching images, it doesn't use querystrings.
         # Fortunately PMS is lenient...
         #
-        if token=="":
+        if not token:
             return 'http://' + g_param['Addr_PMS'] + '/photo/:/transcode/%s/?width=%d&height=%d&url=' % (quote_plus(res), width, height) + quote_plus(res)
         else:
             return res + "?X-Plex-Token=" + token
@@ -1260,7 +1260,7 @@ class CCommandCollection(CCommandHelper):
             #if it's myplex, we should force transcode, disable directplay and set a reasonable speed.
             #todo: speed should be configurable.
             srv = PlexMgr.getServerByIP(g_param['Addr_PMS'])
-            if token!="" and PlexMgr.isServerLocal(srv)==False:
+            if token and PlexMgr.isServerLocal(srv)==False:
                 dprint(__name__, 0, "Changing Remote Transcode")
                 g_ATVSettings.setSetting(UDID, 'transcodequality', '480p 2.0Mbps')
                 g_ATVSettings.setSetting(UDID, 'transcoderaction', 'Transcode')
@@ -1292,7 +1292,7 @@ class CCommandCollection(CCommandHelper):
                 res = PlexAPI_getTranscodePath(self.options, res)
 
             #restore the settings
-            if token!="":
+            if token:
                 g_ATVSettings.setSetting(UDID, 'transcodequality', transcodequality)
                 g_ATVSettings.setSetting(UDID, 'transcoderaction', transcoderaction)
 
